@@ -144,34 +144,41 @@ class EscalonadorFIFO(EscalonadorCAV):
 
 
 class EscalonadorRoundRobin(EscalonadorCAV):
-    def __init__(self, quantum):
-        super().__init__()
+    def __init__(self, quantum, tarefas_iniciais):
+        super().__init__(tarefas_iniciais)
         self.quantum = quantum
 
     def escalonar(self):
         """Escalonamento Round Robin com tarefas de CAVs"""
-        fila = deque(self.tarefas)
-        tempo_inicial = 0
+
+        self.resetar_estado_simulacao()  # Resetar estado no início
+        print(f"--- Escalonamento Round Robin (Quantum: {self.quantum} segundos) ---")
+        fila = deque(self.tarefas_para_escalonar)
+        tempo_atual_simulacao = 0 # Inicializa o relógio da simulação
+        
         while fila:
             tarefa = fila.popleft()
+
+            # Registra sobrecarga cada vez que uma tarefa é executada
+            self.registrar_sobrecarga()
+
+            tempo_exec = min(tarefa.tempo_restante, self.quantum)
+            tarefa.tempo_restante -= tempo_exec
+
+            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando tarefa {tarefa.nome} (Restante: {tarefa.duracao - tarefa.tempo_restante:.2f}/{tarefa.duracao:.2f}s) por {tempo_exec:.2f}s.")
+            # time.sleep(tempo_exec) # OPCIONAL: Simula a execução da tarefa (descomente se quiser simular o tempo de execução real)
+
+            tempo_atual_simulacao += tempo_exec
+
+
             if tarefa.tempo_restante > 0:
-                tarefa.tempo_inicio = tempo_inicial
-                tempo_exec = min(tarefa.tempo_restante, self.quantum)
-                tarefa.tempo_restante -= tempo_exec
-                tempo_inicial += tempo_exec
-                print(f"Executando tarefa {tarefa.nome} por {tempo_exec} segundos.")
-                time.sleep(tempo_exec)  # Simula a execução da tarefa
+                fila.append(tarefa)  # Coloca a tarefa de volta na fila se não terminar
+                print(f"Tarefa {tarefa.nome} ainda pendente, re-adicionada à fila.\n")
+            else:
+                tarefa.tempo_conclusao = tempo_atual_simulacao # Marca o tempo de conclusão
+                print(f"Tarefa {tarefa.nome} finalizada em {tarefa.tempo_conclusao:.2f}s.\n")
 
-                # Registrando a sobrecarga, como exemplo, podemos adicionar um tempo fixo de sobrecarga
-                self.registrar_sobrecarga(self.SOBRECARGA_BASE)  # 0.1 segundos de sobrecarga por tarefa
-                if tarefa.tempo_restante > 0:
-                    fila.append(tarefa)  # Coloca a tarefa de volta na fila se não terminar
-                tarefa.tempo_final = tempo_inicial
-                self.registrar_turnaround(tarefa.tempo_inicio, tarefa.tempo_final)
-                print(f"Tarefa {tarefa.nome} finalizada ou ainda pendente.\n")
-
-        self.exibir_sobrecarga()
-        self.exibir_turnaround()
+        self.calcular_e_exibir_metricas()
 
 # O escalonador Round Robin permite que cada processo seja executado por um tempo limitado (quantum).
 # Quando o processo termina ou o quantum é atingido, o próximo processo da fila é executado.
@@ -249,14 +256,12 @@ if __name__ == "__main__":
     simulador_fifo = CAV(id=1)
     simulador_fifo.executar_tarefas(escalonador_fifo)
 
-    # # Criar um escalonador Round Robin com quantum de 3 segundos
-    # print("\nSimulando CAV com Round Robin:\n")
-    # escalonador_rr = EscalonadorRoundRobin(quantum=3)
-    # for t in tarefas:
-    #     escalonador_rr.adicionar_tarefa(t)
+    # Criar um escalonador Round Robin com quantum de 3 segundos
+    print("\nSimulando CAV com Round Robin:\n")
+    escalonador_rr = EscalonadorRoundRobin(quantum=3, tarefas_iniciais=tarefas)  # Passa a lista de tarefas para o escalonador Round Robin
 
-    # simulador_rr = CAV(id=1)
-    # simulador_rr.executar_tarefas(escalonador_rr)
+    simulador_rr = CAV(id=1)
+    simulador_rr.executar_tarefas(escalonador_rr)
 
     # Criar um escalonador por Prioridade
     print("\nSimulando CAV com Escalonamento por Prioridade:\n")

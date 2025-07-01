@@ -9,13 +9,16 @@ from abc import ABC, abstractmethod
 # Este código fornece a base para que vocês experimentem e implementem suas próprias ideias de escalonamento, mantendo a estrutura flexível e fácil de estender.
 
 class TarefaCAV:
-    def __init__(self, nome, duracao, prioridade=1):
-        self.nome = nome            # Nome da tarefa (ex. Detecção de Obstáculo)
-        self.duracao = duracao      # Tempo necessário para completar a tarefa (em segundos)
-        self.prioridade = prioridade # Prioridade da tarefa (quanto menor o número, maior a prioridade)
-        self.tempo_restante = duracao # Tempo restante para completar a tarefa
-        self.tempo_inicio = 0       # Hora em que a tarefa começa
-        self.tempo_final = 0        # Hora em que a tarefa termina
+    def __init__(self, nome, duracao, prioridade=1, tempo_chegada=0):
+        self.nome = nome
+        self.duracao = duracao
+        self.prioridade = prioridade
+        self.tempo_restante = duracao
+        self.tempo_chegada = tempo_chegada # Hora em que a tarefa começa
+        self.tempo_inicio_execucao = -1   # Tempo da primeira execução
+        self.tempo_final = -1         # Tempo final de conclusão
+        self.tempos_execucao = []         # Lista de tuplas (inicio, fim) de cada burst de execução
+        self.foi_executada = False       # Flag para controle do tempo_inicio_execucao
 
     def __str__(self):
         return f"Tarefa {self.nome} (Prioridade {self.prioridade}): {self.duracao} segundos"
@@ -33,9 +36,12 @@ class TarefaCAV:
 
 # Classe abstrata de Escalonador
 class EscalonadorCAV(ABC):
+    SOBRECARGA_BASE = 0.1  # Exemplo: 0.1 segundos por troca de contexto
+
     def __init__(self):
         self.tarefas = []
         self.sobrecarga_total = 0  # Sobrecarga total acumulada
+        self.turnaround_total = 0  # Contador de turnos para escalonamento 
 
     def adicionar_tarefa(self, tarefa):
         """Adiciona uma tarefa (ação do CAV) à lista de tarefas"""
@@ -49,10 +55,21 @@ class EscalonadorCAV(ABC):
     def registrar_sobrecarga(self, tempo):
         """Adiciona tempo de sobrecarga ao total"""
         self.sobrecarga_total += tempo
-
+        
     def exibir_sobrecarga(self):
         """Exibe a sobrecarga total acumulada"""
         print(f"Sobrecarga total acumulada: {self.sobrecarga_total} segundos.\n")
+
+    def registrar_turnaround(self, tempo_chegada, tempo_final):
+        """Registra o turnaround time de uma tarefa"""
+        # Turnaround time = tempo_final - tempo_chegada
+        turnaround = (tempo_final - tempo_chegada)/len(self.tarefas)
+        self.turnaround_total += turnaround
+        print(f"Turnaround time para a tarefa: {turnaround} segundos.")
+
+    def exibir_turnaround(self):
+        """Exibe o turnaround total acumulado"""
+        print(f"Turnaround total acumulado: {self.turnaround_total} segundos.\n")
 
 # A classe base Escalonador define a estrutura para os escalonadores, incluindo um método escalonar
 # que vocês deverão implementar em suas versões específicas de escalonamento (como FIFO e Round Robin).
@@ -71,9 +88,11 @@ class EscalonadorFIFO(EscalonadorCAV):
 
             # Registrando a sobrecarga, como exemplo, podemos adicionar um tempo fixo de sobrecarga
             #self.registrar_sobrecarga(0.5)  # 0.5 segundos de sobrecarga por tarefa (simulando troca de contexto)
+            self.registrar_turnaround(tarefa.tempo_inicio, tarefa.tempo_final)
             print(f"Tarefa {tarefa.nome} finalizada.\n")
 
         self.exibir_sobrecarga()
+        self.exibir_turnaround()
 
 # O escalonador FIFO executa os processos na ordem em que foram adicionados, sem interrupção, até que todos os processos terminem.
 
@@ -98,13 +117,15 @@ class EscalonadorRoundRobin(EscalonadorCAV):
                 time.sleep(tempo_exec)  # Simula a execução da tarefa
 
                 # Registrando a sobrecarga, como exemplo, podemos adicionar um tempo fixo de sobrecarga
-                self.registrar_sobrecarga(0.3)  # 0.3 segundos de sobrecarga por tarefa
+                self.registrar_sobrecarga(self.SOBRECARGA_BASE)  # 0.1 segundos de sobrecarga por tarefa
                 if tarefa.tempo_restante > 0:
                     fila.append(tarefa)  # Coloca a tarefa de volta na fila se não terminar
                 tarefa.tempo_final = tempo_inicial
+                self.registrar_turnaround(tarefa.tempo_inicio, tarefa.tempo_final)
                 print(f"Tarefa {tarefa.nome} finalizada ou ainda pendente.\n")
 
         self.exibir_sobrecarga()
+        self.exibir_turnaround()
 
 # O escalonador Round Robin permite que cada processo seja executado por um tempo limitado (quantum).
 # Quando o processo termina ou o quantum é atingido, o próximo processo da fila é executado.
@@ -126,10 +147,12 @@ class EscalonadorPrioridade(EscalonadorCAV):
             time.sleep(tarefa.duracao)
 
             # Registrando a sobrecarga, como exemplo, podemos adicionar um tempo fixo de sobrecarga
-            self.registrar_sobrecarga(0.4)  # 0.4 segundos de sobrecarga por tarefa
+            self.registrar_sobrecarga(self.SOBRECARGA_BASE)  # 0.1 segundos de sobrecarga por tarefa
+            self.registrar_turnaround(tarefa.tempo_inicio, tarefa.tempo_final)
             print(f"Tarefa {tarefa.nome} finalizada.\n")
 
         self.exibir_sobrecarga()
+        self.exibir_turnaround()
 
 
 class CAV:

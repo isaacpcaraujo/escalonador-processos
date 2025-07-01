@@ -1,4 +1,5 @@
 import random
+import copy
 import time
 from collections import deque
 from abc import ABC, abstractmethod
@@ -36,12 +37,26 @@ class TarefaCAV:
 
 # Classe abstrata de Escalonador
 class EscalonadorCAV(ABC):
+    # Definimos SOBRECARGA_BASE como um atributo de classe
+    # para consistência entre os escalonadores.
     SOBRECARGA_BASE = 0.1  # Exemplo: 0.1 segundos por troca de contexto
 
-    def __init__(self):
-        self.tarefas = []
+    def __init__(self, tarefas_iniciais):
+        self.tarefas_originais = copy.deepcopy(tarefas_iniciais)
+        self.tarefas_para_escalonar = []
         self.sobrecarga_total = 0  # Sobrecarga total acumulada
-        self.turnaround_total = 0  # Contador de turnos para escalonamento 
+        self.tempos_de_turnaround = [] # Armazenamento dos tempos de turnaround
+        self.tempos_de_espera = [] # Armazenamento dos tempos de espera
+        self.tempos_de_resposta = [] # Armazenamento dos tempos de resposta
+        
+    def _resetar_estado_simulacao(self):
+        """
+        Reinicia o estado das tarefas e métricas para uma nova simulação.
+        Deve ser chamado no início de cada método 'escalonar' das subclasses.
+        """
+        self.tarefas_para_escalonar = copy.deepcopy(self.tarefas_originais)
+        self.sobrecarga_total = 0
+        self.tempos_de_turnaround = []
 
     def adicionar_tarefa(self, tarefa):
         """Adiciona uma tarefa (ação do CAV) à lista de tarefas"""
@@ -52,30 +67,56 @@ class EscalonadorCAV(ABC):
         """Método que será implementado pelos alunos para o algoritmo de escalonamento"""
         pass
 
-    def registrar_sobrecarga(self, tempo):
-        """Adiciona tempo de sobrecarga ao total"""
+    def registrar_sobrecarga(self, tempo=None):
+        """
+        Adiciona tempo de sobrecarga ao total. Se 'tempo' não for fornecido,
+        usa a SOBRECARGA_BASE padrão.
+        """
+        if tempo is None:
+            tempo = self.SOBRECARGA_BASE
+
         self.sobrecarga_total += tempo
         
-    def exibir_sobrecarga(self):
-        """Exibe a sobrecarga total acumulada"""
-        print(f"Sobrecarga total acumulada: {self.sobrecarga_total} segundos.\n")
+    def calcular_e_exibir_metricas(self):
+        """
+        Calcula e exibe o tempo de turnaround médio e a sobrecarga total
+        para a simulação.
+        """
+        if not self.tarefas_para_escalonar:
+            print("Nenhuma tarefa para calcular métricas.")
+            return
 
-    def registrar_turnaround(self, tempo_chegada, tempo_final):
-        """Registra o turnaround time de uma tarefa"""
-        # Turnaround time = tempo_final - tempo_chegada
-        turnaround = (tempo_final - tempo_chegada)/len(self.tarefas)
-        self.turnaround_total += turnaround
-        print(f"Turnaround time para a tarefa: {turnaround} segundos.")
+        print("\n--- Resultados da Simulação ---")
+        for tarefa in self.tarefas_para_escalonar:
+            if tarefa.tempo_conclusao != -1: # Calcula apenas para tarefas que foram concluídas
+                turnaround = tarefa.tempo_conclusao - tarefa.tempo_chegada
+                self.tempos_de_turnaround.append(turnaround)
+                print(f"  - Tarefa '{tarefa.nome}':")
+                print(f"    - Chegada: {tarefa.tempo_chegada:.2f}s, Conclusão: {tarefa.tempo_conclusao:.2f}s")
+                print(f"    - Tempo de Turnaround: {turnaround:.2f}s")
+            else:
+                print(f"  - Tarefa '{tarefa.nome}' não foi concluída.")
 
-    def exibir_turnaround(self):
-        """Exibe o turnaround total acumulado"""
-        print(f"Turnaround total acumulado: {self.turnaround_total} segundos.\n")
+
+        if self.tempos_de_turnaround:
+            avg_turnaround = sum(self.tempos_de_turnaround) / len(self.tempos_de_turnaround)
+            print(f"**Turnaround Médio**: {avg_turnaround:.2f} segundos.")
+        else:
+            print("**Turnaround Médio**: N/A (Nenhuma tarefa concluída).")
+
+        print(f"**Sobrecarga Total Acumulada**: {self.sobrecarga_total:.2f} segundos.")
+        print("------------------------------\n")
+
 
 # A classe base Escalonador define a estrutura para os escalonadores, incluindo um método escalonar
 # que vocês deverão implementar em suas versões específicas de escalonamento (como FIFO e Round Robin).
 
 
 class EscalonadorFIFO(EscalonadorCAV):
+
+    def __init__(self, tarefas_iniciais):
+        super().__init__(tarefas_iniciais) # passa a lista de tarefas para a classe base.
+
     def escalonar(self):
         """Escalonamento FIFO para veículos autônomos"""
         tempo_inicial = 0

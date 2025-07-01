@@ -49,7 +49,7 @@ class EscalonadorCAV(ABC):
         self.tempos_de_espera = [] # Armazenamento dos tempos de espera
         self.tempos_de_resposta = [] # Armazenamento dos tempos de resposta
         
-    def _resetar_estado_simulacao(self):
+    def resetar_estado_simulacao(self):
         """
         Reinicia o estado das tarefas e métricas para uma nova simulação.
         Deve ser chamado no início de cada método 'escalonar' das subclasses.
@@ -120,7 +120,7 @@ class EscalonadorFIFO(EscalonadorCAV):
     def escalonar(self):
         """Escalonamento FIFO para veículos autônomos"""
 
-        self._resetar_estado_simulacao() # Resetar estado no início
+        self.resetar_estado_simulacao() # Resetar estado no início
         print("--- Escalonamento FIFO ---")
         tempo_atual_simulacao = 0 # Inicializa o relógio da simulação
 
@@ -179,26 +179,32 @@ class EscalonadorRoundRobin(EscalonadorCAV):
 
 
 class EscalonadorPrioridade(EscalonadorCAV):
+    def __init__(self, tarefas_iniciais):
+        super().__init__(tarefas_iniciais)  # Passa a lista de tarefas para a classe base
+
     def escalonar(self):
         """Escalonamento por Prioridade (menor número = maior prioridade)"""
-        print("Escalonamento por Prioridade:")
-        # Ordena as tarefas pela prioridade
-        self.tarefas.sort(key=lambda tarefa: tarefa.prioridade)
-        tempo_inicial = 0
-        for tarefa in self.tarefas:
-            tarefa.tempo_inicio = tempo_inicial
-            tempo_inicial += tarefa.duracao
-            tarefa.tempo_final = tempo_inicial
-            print(f"Executando tarefa {tarefa.nome} de {tarefa.duracao} segundos com prioridade {tarefa.prioridade}.")
-            time.sleep(tarefa.duracao)
 
-            # Registrando a sobrecarga, como exemplo, podemos adicionar um tempo fixo de sobrecarga
-            self.registrar_sobrecarga(self.SOBRECARGA_BASE)  # 0.1 segundos de sobrecarga por tarefa
-            self.registrar_turnaround(tarefa.tempo_inicio, tarefa.tempo_final)
-            print(f"Tarefa {tarefa.nome} finalizada.\n")
+        self.resetar_estado_simulacao() # Resetar estado no início
+        print("--- Escalonamento por Prioridade ---")
 
-        self.exibir_sobrecarga()
-        self.exibir_turnaround()
+        # Ordena as tarefas pela prioridade (não preemptivo)
+        self.tarefas_para_escalonar.sort(key=lambda tarefa: tarefa.prioridade)
+
+        tempo_atual_simulacao = 0 # Inicializa o relógio da simulação
+        for tarefa in self.tarefas_para_escalonar: # Usa a lista de tarefas resetada
+            self.registrar_sobrecarga()
+
+            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando tarefa {tarefa.nome} (Prioridade: {tarefa.prioridade}, Duração: {tarefa.duracao}s)...")
+            # time.sleep(tarefa.duracao) # Opcional: Simula a execução da tarefa (descomente se quiser simular o tempo de execução real)
+
+            tempo_atual_simulacao += tarefa.duracao
+            tarefa.tempo_conclusao = tempo_atual_simulacao # Marca o tempo de conclusão
+            tarefa.tempo_restante = 0 # Garante que a tarefa está marcada como concluída
+
+            print(f"Tarefa {tarefa.nome} finalizada em {tarefa.tempo_conclusao:.2f}s.\n")
+
+        self.calcular_e_exibir_metricas() # Calcula e exibe as métricas no final
 
 
 class CAV:
@@ -239,8 +245,6 @@ if __name__ == "__main__":
     # Criar um escalonador FIFO
     print("Simulando CAV com FIFO:\n")
     escalonador_fifo = EscalonadorFIFO(tarefas_iniciais=tarefas)  # Passa a lista de tarefas para o escalonador FIFO
-    # for t in tarefas:
-    #     escalonador_fifo.adicionar_tarefa(t)
 
     simulador_fifo = CAV(id=1)
     simulador_fifo.executar_tarefas(escalonador_fifo)
@@ -254,11 +258,9 @@ if __name__ == "__main__":
     # simulador_rr = CAV(id=1)
     # simulador_rr.executar_tarefas(escalonador_rr)
 
-    # # Criar um escalonador por Prioridade
-    # print("\nSimulando CAV com Escalonamento por Prioridade:\n")
-    # escalonador_prio = EscalonadorPrioridade()
-    # for t in tarefas:
-    #     escalonador_prio.adicionar_tarefa(t)
+    # Criar um escalonador por Prioridade
+    print("\nSimulando CAV com Escalonamento por Prioridade:\n")
+    escalonador_prio = EscalonadorPrioridade(tarefas_iniciais=tarefas) # Passa a lista de tarefas para o escalonador por prioridade
 
-    # simulador_prio = CAV(id=1)
-    # simulador_prio.executar_tarefas(escalonador_prio)
+    simulador_prio = CAV(id=1)
+    simulador_prio.executar_tarefas(escalonador_prio)

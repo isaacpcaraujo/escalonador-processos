@@ -46,8 +46,6 @@ class EscalonadorCAV(ABC):
         self.tarefas_para_escalonar = []
         self.sobrecarga_total = 0  # Sobrecarga total acumulada
         self.tempos_de_turnaround = [] # Armazenamento dos tempos de turnaround
-        self.tempos_de_espera = [] # Armazenamento dos tempos de espera
-        self.tempos_de_resposta = [] # Armazenamento dos tempos de resposta
         
     def resetar_estado_simulacao(self):
         """

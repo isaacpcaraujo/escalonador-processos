@@ -58,10 +58,6 @@ class EscalonadorCAV(ABC):
         self.sobrecarga_total = 0
         self.tempos_de_turnaround = []
 
-    # def adicionar_tarefa(self, tarefa):
-    #     """Adiciona uma tarefa (ação do CAV) à lista de tarefas"""
-    #     self.tarefas.append(tarefa)
-
     @abstractmethod
     def escalonar(self):
         """Método que será implementado pelos alunos para o algoritmo de escalonamento"""

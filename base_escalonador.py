@@ -250,13 +250,13 @@ class EscalonadorEDF(EscalonadorCAV):
             if tarefa_atual.tempo_restante <= 0:
                 tarefa_atual.tempo_conclusao = tempo_atual_simulacao
                 tarefas_pendentes.remove(tarefa_atual)  # Remove da lista de pendentes
-                print(f"    - ✅ Tarefa {tarefa_atual.nome} finalizada em {tarefa_atual.tempo_conclusao:.2f}s")
+                print(f"    -  Tarefa {tarefa_atual.nome} finalizada em {tarefa_atual.tempo_conclusao:.2f}s")
                 
                 # Verifica se perdeu o deadline
                 if tarefa_atual.tempo_conclusao > tarefa_atual.deadline:
-                    print(f"    - ⚠️  DEADLINE PERDIDO! (Atraso: {tarefa_atual.tempo_conclusao - tarefa_atual.deadline:.2f}s)")
+                    print(f"    -   DEADLINE PERDIDO! (Atraso: {tarefa_atual.tempo_conclusao - tarefa_atual.deadline:.2f}s)")
                 else:
-                    print(f"    - ✅ Deadline cumprido (Folga: {tarefa_atual.deadline - tarefa_atual.tempo_conclusao:.2f}s)")
+                    print(f"    -  Deadline cumprido (Folga: {tarefa_atual.deadline - tarefa_atual.tempo_conclusao:.2f}s)")
             else:
                 print(f"    - Tarefa {tarefa_atual.nome} preemptada, retornando à fila")
             

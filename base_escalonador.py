@@ -10,10 +10,11 @@ from abc import ABC, abstractmethod
 # Este código fornece a base para que vocês experimentem e implementem suas próprias ideias de escalonamento, mantendo a estrutura flexível e fácil de estender.
 
 class TarefaCAV:
-    def __init__(self, nome, duracao, prioridade=1, tempo_chegada=0):
+    def __init__(self, nome, duracao, prioridade=1, tempo_chegada=0, deadline=0):
         self.nome = nome
         self.duracao = duracao
         self.prioridade = prioridade
+        self.deadline = deadline
         self.tempo_restante = duracao
         self.tempo_chegada = tempo_chegada # Hora em que a tarefa começa
         self.tempo_inicio_execucao = -1   # Tempo da primeira execução
@@ -208,6 +209,62 @@ class EscalonadorPrioridade(EscalonadorCAV):
         self.calcular_e_exibir_metricas() # Calcula e exibe as métricas no final
 
 
+class EscalonadorEDF(EscalonadorCAV):
+    def __init__(self, tarefas_iniciais, quantum=1):
+        super().__init__(tarefas_iniciais)  # Passa a lista de tarefas para a classe base
+        self.quantum = quantum  # Quantum para preempção (padrão: 1 segundo)
+
+    def escalonar(self):
+        """Escalonamento EDF (Earliest Deadline First) - Preemptivo"""
+
+        self.resetar_estado_simulacao()  # Resetar estado no início
+        print(f"--- Escalonamento EDF (Quantum: {self.quantum} segundos) ---")
+
+        # Lista de tarefas ainda não concluídas
+        tarefas_pendentes = [t for t in self.tarefas_para_escalonar if t.tempo_restante > 0]
+        tempo_atual_simulacao = 0  # Inicializa o relógio da simulação
+
+        while tarefas_pendentes:
+            # Ordena as tarefas pendentes por deadline (menor deadline primeiro)
+            tarefas_pendentes.sort(key=lambda tarefa: tarefa.deadline)
+            
+            # Seleciona a tarefa com o deadline mais próximo
+            tarefa_atual = tarefas_pendentes[0]
+
+            # Registra sobrecarga por troca de contexto
+            self.registrar_sobrecarga()
+
+            # Calcula o tempo de execução para este ciclo
+            tempo_exec = min(tarefa_atual.tempo_restante, self.quantum)
+            tarefa_atual.tempo_restante -= tempo_exec
+
+            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando tarefa {tarefa_atual.nome}")
+            print(f"    - Deadline: {tarefa_atual.deadline:.2f}s")
+            print(f"    - Tempo restante: {tarefa_atual.tempo_restante:.2f}s")
+            print(f"    - Executando por: {tempo_exec:.2f}s")
+            
+            # Simula a execução
+            tempo_atual_simulacao += tempo_exec
+
+            # Verifica se a tarefa foi concluída
+            if tarefa_atual.tempo_restante <= 0:
+                tarefa_atual.tempo_conclusao = tempo_atual_simulacao
+                tarefas_pendentes.remove(tarefa_atual)  # Remove da lista de pendentes
+                print(f"    - ✅ Tarefa {tarefa_atual.nome} finalizada em {tarefa_atual.tempo_conclusao:.2f}s")
+                
+                # Verifica se perdeu o deadline
+                if tarefa_atual.tempo_conclusao > tarefa_atual.deadline:
+                    print(f"    - ⚠️  DEADLINE PERDIDO! (Atraso: {tarefa_atual.tempo_conclusao - tarefa_atual.deadline:.2f}s)")
+                else:
+                    print(f"    - ✅ Deadline cumprido (Folga: {tarefa_atual.deadline - tarefa_atual.tempo_conclusao:.2f}s)")
+            else:
+                print(f"    - Tarefa {tarefa_atual.nome} preemptada, retornando à fila")
+            
+            print()  # Linha em branco para separar os ciclos
+
+        self.calcular_e_exibir_metricas()  # Calcula e exibe as métricas no final
+
+
 class CAV:
     def __init__(self, id):
         self.id = id  # Identificador único para cada CAV
@@ -225,10 +282,10 @@ class CAV:
 # Função para criar algumas tarefas fictícias
 def criar_tarefas():
     tarefas = [
-        TarefaCAV("Detecção de Obstáculo", random.randint(5, 10), prioridade=1),
-        TarefaCAV("Planejamento de Rota", random.randint(3, 6), prioridade=2),
-        TarefaCAV("Manutenção de Velocidade", random.randint(2, 5), prioridade=3),
-        TarefaCAV("Comunicando com Infraestrutura", random.randint(4, 7), prioridade=1)
+        TarefaCAV("Detecção de Obstáculo", random.randint(5, 10), deadline=random.randint(15, 25), prioridade=1),
+        TarefaCAV("Planejamento de Rota", random.randint(3, 6), deadline=random.randint(10, 20), prioridade=2),
+        TarefaCAV("Manutenção de Velocidade", random.randint(2, 5), deadline=random.randint(8, 15), prioridade=3),
+        TarefaCAV("Comunicando com Infraestrutura", random.randint(4, 7), deadline=random.randint(12, 18), prioridade=1)
     ]
     return tarefas
 
@@ -263,3 +320,11 @@ if __name__ == "__main__":
 
     simulador_prio = CAV(id=1)
     simulador_prio.executar_tarefas(escalonador_prio)
+
+    # Criar um escalonador EDF
+    print("\nSimulando CAV com Escalonamento EDF:\n")
+    escalonador_edf = EscalonadorEDF(tarefas_iniciais=tarefas, quantum=3)  # Quantum de 2 segundos
+
+    simulador_edf = CAV(id=1)
+    simulador_edf.executar_tarefas(escalonador_edf)
+

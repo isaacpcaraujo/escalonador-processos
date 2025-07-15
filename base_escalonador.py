@@ -104,7 +104,7 @@ class EscalonadorCAV(ABC):
 
 
 # A classe base Escalonador define a estrutura para os escalonadores, incluindo um método escalonar
-# que vocês deverão implementar em suas versões específicas de escalonamento (como FIFO e Round Robin).
+# que vocês deverão implementar em suas versões específicas de escalonamento (como FIFO, SJF e Round Robin).
 
 
 class EscalonadorFIFO(EscalonadorCAV):
@@ -136,6 +136,37 @@ class EscalonadorFIFO(EscalonadorCAV):
         self.calcular_e_exibir_metricas() # Calcula e exibe as métricas no final
 
 # O escalonador FIFO executa os processos na ordem em que foram adicionados, sem interrupção, até que todos os processos terminem.
+
+
+class EscalonadorSJF(EscalonadorCAV):
+    def _init_(self, tarefas_iniciais):
+        super.__init__(tarefas_iniciais)
+
+    def escalonar(self):
+        """Escalonamento SJF com tarefas de CAVs"""
+
+        self.resetar_estado_simulacao() # Resetar estado no início
+        print("--- Escalonamento SJF ---")
+
+        # Ordena as tarefas pela prioridade (não preemptivo)
+        self.tarefas_para_escalonar.sort(key=lambda tarefa: tarefa.duracao)
+
+        tempo_atual_simulacao = 0 # Inicializa o relógio da simulação
+        for tarefa in self.tarefas_para_escalonar: # Usa a lista de tarefas resetada
+            # Registrar sobrecarga antes de iniciar a tarefa (custo de "carregar" a tarefa)
+            # self.registrar_sobrecarga() # OPCIONAL: Descomente se quiser simular a sobrecarga antes de cada tarefa
+
+            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando tarefa {tarefa.nome} (Duração: {tarefa.duracao}s)...")
+            # time.sleep(tarefa.duracao)  # OPCIONAL: Simula a execução da tarefa (descomente se quiser simular o tempo de execução real)
+
+            tempo_atual_simulacao += tarefa.duracao
+            tarefa.tempo_conclusao = tempo_atual_simulacao # Marca o tempo de conclusão
+            tarefa.tempo_restante = 0 # Garante que a tarefa está marcada como concluída
+
+            # Registrando a sobrecarga, como exemplo, podemos adicionar um tempo fixo de sobrecarga
+            print(f"Tarefa {tarefa.nome} finalizada em {tarefa.tempo_conclusao:.2f}s.\n")
+
+        self.calcular_e_exibir_metricas() # Calcula e exibe as métricas no final
 
 
 class EscalonadorRoundRobin(EscalonadorCAV):
@@ -307,24 +338,31 @@ if __name__ == "__main__":
     simulador_fifo = CAV(id=1)
     simulador_fifo.executar_tarefas(escalonador_fifo)
 
+    # Criar um escalonador SJF
+    print("Simulando CAV com SJF:\n")
+    escalonador_fifo = EscalonadorSJF(tarefas_iniciais=tarefas)  # Passa a lista de tarefas para o escalonador FIFO
+
+    simulador_fifo = CAV(id=2)
+    simulador_fifo.executar_tarefas(escalonador_fifo)
+
     # Criar um escalonador Round Robin com quantum de 3 segundos
     print("\nSimulando CAV com Round Robin:\n")
     escalonador_rr = EscalonadorRoundRobin(quantum=3, tarefas_iniciais=tarefas)  # Passa a lista de tarefas para o escalonador Round Robin
 
-    simulador_rr = CAV(id=1)
+    simulador_rr = CAV(id=3)
     simulador_rr.executar_tarefas(escalonador_rr)
 
     # Criar um escalonador por Prioridade
     print("\nSimulando CAV com Escalonamento por Prioridade:\n")
     escalonador_prio = EscalonadorPrioridade(tarefas_iniciais=tarefas) # Passa a lista de tarefas para o escalonador por prioridade
 
-    simulador_prio = CAV(id=1)
+    simulador_prio = CAV(id=4)
     simulador_prio.executar_tarefas(escalonador_prio)
 
     # Criar um escalonador EDF
     print("\nSimulando CAV com Escalonamento EDF:\n")
     escalonador_edf = EscalonadorEDF(tarefas_iniciais=tarefas, quantum=3)  # Quantum de 2 segundos
 
-    simulador_edf = CAV(id=1)
+    simulador_edf = CAV(id=5)
     simulador_edf.executar_tarefas(escalonador_edf)
 

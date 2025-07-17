@@ -45,7 +45,7 @@ def visualizar_gantt(parent_window, escalonador: EscalonadorCAV, titulo: str):
     ax.set_xlim(0, max_time * 1.05 if max_time > 0 else 10)
     ax.grid(True, which='both', linestyle='--', linewidth=0.5, axis='x')
 
-    # 6. Adiciona o gráfico à janela Tkinter
+    # Adiciona o gráfico à janela Tkinter
     canvas = FigureCanvasTkAgg(fig, master=janela_gantt)
     canvas.draw()
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)

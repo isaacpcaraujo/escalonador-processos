@@ -1,5 +1,6 @@
 import tkinter as tk
 import random
+import escalonadorML
 
 # Importa as classes e funções dos outros arquivos do projeto
 from tarefa import TarefaCAV
@@ -9,6 +10,9 @@ from escalonador import (
     EscalonadorRoundRobin, 
     EscalonadorPrioridade, 
     EscalonadorEDF
+)
+from escalonadorML import (
+    EscalonadorML
 )
 from visualizacao import visualizar_gantt
 
@@ -27,6 +31,8 @@ class App:
         self.escalonador_rr = None
         self.escalonador_prio = None
         self.escalonador_edf = None
+        self.escalonador_ml = None
+        self.modelo_decision_tree = None
 
         # Cria os componentes da interface
         self._criar_widgets()
@@ -61,6 +67,9 @@ class App:
         
         btn_edf = tk.Button(self.root, text="Simular com EDF (Q=2)", command=lambda: visualizar_gantt(self.root, self.escalonador_edf, "Earliest Deadline First (EDF)"))
         btn_edf.pack(pady=2, fill=tk.X, padx=20)
+
+        btn_edf = tk.Button(self.root, text="Simular com Escalonador ML (Q=2)", command=lambda: visualizar_gantt(self.root, self.escalonador_ml, "Decision Tree Model"))
+        btn_edf.pack(pady=2, fill=tk.X, padx=20)
     
     def _criar_tarefas(self):
         """Método privado para gerar uma lista de tarefas aleatórias."""
@@ -76,12 +85,15 @@ class App:
         print("--- Novas tarefas geradas! ---")
         self.tarefas_base = self._criar_tarefas()
         
+        self.modelo_decision_tree = escalonadorML.treinar_modelo_decision_tree()
+
         # Recria as instâncias dos escalonadores com as novas tarefas
         self.escalonador_fifo = EscalonadorFIFO(tarefas_iniciais=self.tarefas_base)
         self.escalonador_sjf = EscalonadorSJF(tarefas_iniciais=self.tarefas_base)
-        self.escalonador_rr = EscalonadorRoundRobin(quantum=3, tarefas_iniciais=self.tarefas_base)
+        self.escalonador_rr = EscalonadorRoundRobin(quantum=2, tarefas_iniciais=self.tarefas_base)
         self.escalonador_prio = EscalonadorPrioridade(tarefas_iniciais=self.tarefas_base)
         self.escalonador_edf = EscalonadorEDF(tarefas_iniciais=self.tarefas_base, quantum=2)
+        self.escalonador_ml = EscalonadorML(tarefas_iniciais=self.tarefas_base, modelo=self.modelo_decision_tree)
 
     def iniciar(self):
         """Inicia o loop principal do Tkinter."""

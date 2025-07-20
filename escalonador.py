@@ -1,6 +1,8 @@
 import copy
 from collections import deque
 from abc import ABC, abstractmethod
+import csv
+import os
 
 # Importa a classe TarefaCAV do arquivo tarefa.py
 from tarefa import TarefaCAV
@@ -56,6 +58,62 @@ class EscalonadorCAV(ABC):
         print(f"**Sobrecarga Total Acumulada**: {self.sobrecarga_total:.2f} segundos.")
         print(f"**Deadlines Perdidos**: {self.deadlines_perdidos}")  # Adicionado
         print("------------------------------\n")
+
+    def salvar_metricas_csv(self, nome_arquivo="metricas_escalonamento.csv"):
+        if not self.tarefas_para_escalonar:
+            print("Nenhuma tarefa para salvar métricas.")
+            return
+
+        caminho_completo = os.path.join(os.getcwd(), nome_arquivo)
+
+        with open(caminho_completo, mode='w', newline='') as arquivo_csv:
+            writer = csv.writer(arquivo_csv)
+            
+            # Cabeçalho
+            writer.writerow([
+                "Nome da Tarefa", "Tempo de Chegada", "Tempo de Conclusão",
+                "Tempo de Turnaround", "Deadline", "Deadline Perdido?"
+            ])
+
+            for tarefa in self.tarefas_para_escalonar:
+                if tarefa.tempo_final != -1:
+                    turnaround = tarefa.tempo_final - tarefa.tempo_chegada
+                    deadline_perdido = (
+                        "Sim" if tarefa.deadline is not None and tarefa.tempo_final > tarefa.deadline else "Não"
+                    )
+                    writer.writerow([
+                        tarefa.nome,
+                        f"{tarefa.tempo_chegada:.2f}",
+                        f"{tarefa.tempo_final:.2f}",
+                        f"{turnaround:.2f}",
+                        f"{tarefa.deadline:.2f}" if tarefa.deadline is not None else "N/A",
+                        deadline_perdido
+                    ])
+                else:
+                    writer.writerow([
+                        tarefa.nome,
+                        f"{tarefa.tempo_chegada:.2f}",
+                        "Não concluída",
+                        "N/A",
+                        f"{tarefa.deadline:.2f}" if tarefa.deadline is not None else "N/A",
+                        "Sim"  # Considera deadline perdido se nem foi concluída
+                    ])
+            
+            # Linha em branco
+            writer.writerow([])
+
+            # Métricas agregadas
+            avg_turnaround = (
+                sum(self.tempos_de_turnaround) / len(self.tempos_de_turnaround)
+                if self.tempos_de_turnaround else 0
+            )
+
+            writer.writerow(["Métricas Finais"])
+            writer.writerow(["Turnaround Médio (s)", f"{avg_turnaround:.2f}"])
+            writer.writerow(["Sobrecarga Total (s)", f"{self.sobrecarga_total:.2f}"])
+            writer.writerow(["Total de Deadlines Perdidos", self.deadlines_perdidos])
+
+        print(f"\n✅ Métricas salvas em: {caminho_completo}")
 
 # --- IMPLEMENTAÇÕES DOS ESCALONADORES ---
 

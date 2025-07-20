@@ -1,0 +1,10 @@
+Nome da Tarefa,Tempo de Chegada,Tempo de Conclusão,Tempo de Turnaround,Deadline,Deadline Perdido?
+Detecção de Obstáculo,0.00,21.00,21.00,15.00,Sim
+Planejamento de Rota,0.00,7.00,7.00,13.00,Não
+Manutenção de Velocidade,0.00,4.00,4.00,11.00,Não
+Com. com Infraestrutura,0.00,14.00,14.00,14.00,Não
+
+Métricas Finais
+Turnaround Médio (s),11.50
+Sobrecarga Total (s),1.20
+Total de Deadlines Perdidos,1

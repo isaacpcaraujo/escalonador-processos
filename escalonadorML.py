@@ -84,8 +84,6 @@ class EscalonadorML(EscalonadorCAV):
             else:
                 print(f"Tempo: {inicio_exec:.2f}s - Executou {tarefa.nome} até {tempo_atual_simulacao:.2f}s. (resta {tarefa.tempo_restante:.2f}s)")
 
-        self.calcular_e_exibir_metricas()
-
 # --- Função para gerar dados de treinamento supervisionado ---
 def gerar_dataset_supervisionado(n_amostras=1000, n_tarefas_por_amostra=5):
     data = []

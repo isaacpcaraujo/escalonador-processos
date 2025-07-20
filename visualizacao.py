@@ -13,11 +13,12 @@ def visualizar_gantt(parent_window, escalonador: EscalonadorCAV, titulo: str):
     # Executa a simulação para popular os dados
     escalonador.escalonar()
     escalonador.calcular_e_exibir_metricas()
+    escalonador.salvar_metricas_csv(f"resultados_{escalonador.__class__.__name__}.csv")
 
     # Prepara a janela de visualização
     janela_gantt = tk.Toplevel(parent_window)
     janela_gantt.title(titulo)
-    janela_gantt.geometry("900x500")
+    janela_gantt.geometry("1000x500")
 
     fig, ax = plt.subplots(figsize=(10, 4))
     

@@ -59,7 +59,7 @@ class App:
         btn_sjf = tk.Button(self.root, text="Simular com SJF", command=lambda: visualizar_gantt(self.root, self.escalonador_sjf, "Shortest Job First (SJF)"))
         btn_sjf.pack(pady=2, fill=tk.X, padx=20)
 
-        btn_rr = tk.Button(self.root, text="Simular com Round Robin (Q=3)", command=lambda: visualizar_gantt(self.root, self.escalonador_rr, "Round Robin"))
+        btn_rr = tk.Button(self.root, text="Simular com Round Robin (Q=2)", command=lambda: visualizar_gantt(self.root, self.escalonador_rr, "Round Robin"))
         btn_rr.pack(pady=2, fill=tk.X, padx=20)
 
         btn_prio = tk.Button(self.root, text="Simular com Prioridade", command=lambda: visualizar_gantt(self.root, self.escalonador_prio, "Prioridade"))
@@ -72,13 +72,32 @@ class App:
         btn_edf.pack(pady=2, fill=tk.X, padx=20)
     
     def _criar_tarefas(self):
-        """Método privado para gerar uma lista de tarefas aleatórias."""
-        return [
-            TarefaCAV("Detecção de Obstáculo", random.randint(5, 10), deadline=random.randint(15, 25), prioridade=1),
-            TarefaCAV("Planejamento de Rota", random.randint(3, 6), deadline=random.randint(10, 20), prioridade=2),
-            TarefaCAV("Manutenção de Velocidade", random.randint(2, 5), deadline=random.randint(8, 15), prioridade=3),
-            TarefaCAV("Com. com Infraestrutura", random.randint(4, 7), deadline=random.randint(12, 18), prioridade=1)
+        """Gera 10 tarefas aleatórias com tempos de chegada espaçados de 2 minutos."""
+        nomes_possiveis = [
+            "Detecção de Obstáculo", "Planejamento de Rota", "Manutenção de Velocidade",
+            "Com. com Infraestrutura", "Monitoramento de Sensores", "Análise de Imagens",
+            "Controle de Estabilidade", "Atualização de Mapas", "Ajuste de Trajetória",
+            "Gerenciamento de Energia"
         ]
+        tarefas = []
+
+        for i in range(10):
+            nome = nomes_possiveis[i % len(nomes_possiveis)] + f" #{i+1}"
+            tempo_chegada = i * 2  # cada tarefa chega 2 minutos depois da anterior
+            duracao = random.randint(3, 8)  # tempo realista de execução
+            deadline = tempo_chegada + random.randint(duracao + 3, duracao + 10)  # deadline coerente
+            prioridade = random.randint(1, 5)
+
+            tarefa = TarefaCAV(
+                nome=nome,
+                duracao=duracao,
+                deadline=deadline,
+                prioridade=prioridade,
+                tempo_chegada=tempo_chegada
+            )
+            tarefas.append(tarefa)
+
+        return tarefas
 
     def redefinir_tarefas(self):
         """Gera um novo conjunto de tarefas e recria as instâncias dos escalonadores."""
@@ -90,7 +109,7 @@ class App:
         # Recria as instâncias dos escalonadores com as novas tarefas
         self.escalonador_fifo = EscalonadorFIFO(tarefas_iniciais=self.tarefas_base)
         self.escalonador_sjf = EscalonadorSJF(tarefas_iniciais=self.tarefas_base)
-        self.escalonador_rr = EscalonadorRoundRobin(quantum=2, tarefas_iniciais=self.tarefas_base)
+        self.escalonador_rr = EscalonadorRoundRobin(tarefas_iniciais=self.tarefas_base, quantum=2)
         self.escalonador_prio = EscalonadorPrioridade(tarefas_iniciais=self.tarefas_base)
         self.escalonador_edf = EscalonadorEDF(tarefas_iniciais=self.tarefas_base, quantum=2)
         self.escalonador_ml = EscalonadorML(tarefas_iniciais=self.tarefas_base, modelo=self.modelo_decision_tree, quantum=2)

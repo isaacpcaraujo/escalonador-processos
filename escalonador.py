@@ -14,11 +14,13 @@ class EscalonadorCAV(ABC):
         self.tarefas_para_escalonar = []
         self.sobrecarga_total = 0
         self.tempos_de_turnaround = []
+        self.deadlines_perdidos = 0  # Adicionado
 
     def resetar_estado_simulacao(self):
         self.tarefas_para_escalonar = copy.deepcopy(self.tarefas_originais)
         self.sobrecarga_total = 0
         self.tempos_de_turnaround = []
+        self.deadlines_perdidos = 0  # Adicionado
 
     @abstractmethod
     def escalonar(self):
@@ -52,6 +54,7 @@ class EscalonadorCAV(ABC):
             print("**Turnaround Médio**: N/A (Nenhuma tarefa concluída).")
 
         print(f"**Sobrecarga Total Acumulada**: {self.sobrecarga_total:.2f} segundos.")
+        print(f"**Deadlines Perdidos**: {self.deadlines_perdidos}")  # Adicionado
         print("------------------------------\n")
 
 # --- IMPLEMENTAÇÕES DOS ESCALONADORES ---
@@ -152,5 +155,6 @@ class EscalonadorEDF(EscalonadorCAV):
                 print(f"   -> Tarefa {tarefa_atual.nome} finalizada em {tarefa_atual.tempo_final:.2f}s.")
                 if tarefa_atual.tempo_final > tarefa_atual.deadline:
                     print(f"   -> DEADLINE PERDIDO!\n")
+                    self.deadlines_perdidos += 1  # Contador incrementado
                 else:
                     print(f"   -> Deadline cumprido.\n")

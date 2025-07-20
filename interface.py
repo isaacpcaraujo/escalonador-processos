@@ -93,7 +93,7 @@ class App:
         self.escalonador_rr = EscalonadorRoundRobin(quantum=2, tarefas_iniciais=self.tarefas_base)
         self.escalonador_prio = EscalonadorPrioridade(tarefas_iniciais=self.tarefas_base)
         self.escalonador_edf = EscalonadorEDF(tarefas_iniciais=self.tarefas_base, quantum=2)
-        self.escalonador_ml = EscalonadorML(tarefas_iniciais=self.tarefas_base, modelo=self.modelo_decision_tree)
+        self.escalonador_ml = EscalonadorML(tarefas_iniciais=self.tarefas_base, modelo=self.modelo_decision_tree, quantum=2)
 
     def iniciar(self):
         """Inicia o loop principal do Tkinter."""

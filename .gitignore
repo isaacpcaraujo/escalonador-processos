@@ -1,5 +1,6 @@
 # Ignore CSV files
 *.csv
+*.png
 
 # Ignore OS-specific files
 .DS_Store

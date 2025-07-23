@@ -72,7 +72,7 @@ class EscalonadorCAV(ABC):
             # Cabeçalho
             writer.writerow([
                 "Nome da Tarefa", "Tempo de Chegada", "Tempo de Conclusão",
-                "Tempo de Turnaround", "Deadline", "Deadline Perdido?"
+                "Tempo de Turnaround", "Prioridade", "Deadline", "Deadline Perdido?"
             ])
 
             for tarefa in self.tarefas_para_escalonar:
@@ -86,6 +86,7 @@ class EscalonadorCAV(ABC):
                         f"{tarefa.tempo_chegada:.2f}",
                         f"{tarefa.tempo_final:.2f}",
                         f"{turnaround:.2f}",
+                        f"{tarefa.prioridade}",
                         f"{tarefa.deadline:.2f}" if tarefa.deadline is not None else "N/A",
                         deadline_perdido
                     ])
@@ -95,6 +96,7 @@ class EscalonadorCAV(ABC):
                         f"{tarefa.tempo_chegada:.2f}",
                         "Não concluída",
                         "N/A",
+                        f"{tarefa.prioridade}",
                         f"{tarefa.deadline:.2f}" if tarefa.deadline is not None else "N/A",
                         "Sim"  # Considera deadline perdido se nem foi concluída
                     ])
@@ -211,7 +213,7 @@ class EscalonadorEDF(EscalonadorCAV):
                 tarefa_atual.tempo_final = tempo_atual_simulacao
                 tarefas_pendentes.remove(tarefa_atual)
                 print(f"   -> Tarefa {tarefa_atual.nome} finalizada em {tarefa_atual.tempo_final:.2f}s.")
-                if tarefa_atual.tempo_final > tarefa_atual.deadline:
+                if tarefa_atual.tempo_final - tarefa_atual.tempo_chegada > tarefa_atual.deadline:
                     print(f"   -> DEADLINE PERDIDO!\n")
                     self.deadlines_perdidos += 1  # Contador incrementado
                 else:

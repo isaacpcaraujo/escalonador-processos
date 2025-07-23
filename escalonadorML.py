@@ -76,7 +76,7 @@ class EscalonadorML(EscalonadorCAV):
                 
                 # Verifica deadline
                 if tarefa.deadline is not None:
-                    if tarefa.tempo_final > tarefa.deadline:
+                    if tarefa.tempo_final - tarefa.tempo_chegada > tarefa.deadline :
                         print(f"   -> DEADLINE PERDIDO para {tarefa.nome}!")
                         self.deadlines_perdidos += 1
                     else:

@@ -85,7 +85,7 @@ class App:
             nome = nomes_possiveis[i % len(nomes_possiveis)] + f" #{i+1}"
             tempo_chegada = i * 2  # cada tarefa chega 2 minutos depois da anterior
             duracao = random.randint(3, 8)  # tempo realista de execução
-            deadline = tempo_chegada + random.randint(duracao + 3, duracao + 10)  # deadline coerente
+            deadline = tempo_chegada + duracao + random.randint(5, 20)  # deadline coerente
             prioridade = random.randint(1, 5)
 
             tarefa = TarefaCAV(

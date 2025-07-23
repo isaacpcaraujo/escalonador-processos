@@ -1,8 +1,6 @@
 import pandas as pd
 import random
-import matplotlib.pyplot as plt
 from sklearn.tree import DecisionTreeClassifier
-from sklearn import tree
 from tarefa import TarefaCAV
 from escalonador import EscalonadorCAV
 

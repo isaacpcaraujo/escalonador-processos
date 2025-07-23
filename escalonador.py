@@ -4,9 +4,6 @@ from abc import ABC, abstractmethod
 import csv
 import os
 
-# Importa a classe TarefaCAV do arquivo tarefa.py
-from tarefa import TarefaCAV
-
 # --- CLASSE ABSTRATA DE ESCALONADOR ---
 class EscalonadorCAV(ABC):
     SOBRECARGA_BASE = 0.1
@@ -132,6 +129,7 @@ class EscalonadorFIFO(EscalonadorCAV):
             tarefa.tempo_final = tempo_atual_simulacao
             tarefa.tempo_restante = 0
             print(f"Tarefa {tarefa.nome} finalizada em {tarefa.tempo_final:.2f}s.\n")
+        print(self.tarefas_para_escalonar)    
 
 class EscalonadorSJF(EscalonadorCAV):
     def escalonar(self):
@@ -139,14 +137,20 @@ class EscalonadorSJF(EscalonadorCAV):
         print("--- Escalonamento SJF ---")
         self.tarefas_para_escalonar.sort(key=lambda tarefa: tarefa.duracao)
         tempo_atual_simulacao = 0
-        for tarefa in self.tarefas_para_escalonar:
+        fila = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao]
+        fila.sort(key=lambda t: t.duracao)
+        for _ in range(len(self.tarefas_para_escalonar)):
+            tarefa = fila[0]
             print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando tarefa {tarefa.nome}...")
             inicio_exec = tempo_atual_simulacao
             tempo_atual_simulacao += tarefa.duracao
             tarefa.tempos_execucao.append((inicio_exec, tempo_atual_simulacao))
             tarefa.tempo_final = tempo_atual_simulacao
             tarefa.tempo_restante = 0
+            tarefa.foi_executada = True
             print(f"Tarefa {tarefa.nome} finalizada em {tarefa.tempo_final:.2f}s.\n")
+            fila = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao and not tarefa.foi_executada]
+            fila.sort(key=lambda t: t.duracao)
 
 class EscalonadorRoundRobin(EscalonadorCAV):
     def __init__(self, quantum, tarefas_iniciais):
@@ -156,10 +160,10 @@ class EscalonadorRoundRobin(EscalonadorCAV):
     def escalonar(self):
         self.resetar_estado_simulacao()
         print(f"--- Escalonamento Round Robin (Quantum: {self.quantum}s) ---")
-        fila = deque(self.tarefas_para_escalonar)
         tempo_atual_simulacao = 0
+        fila = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao and not tarefa.foi_executada]
         while fila:
-            tarefa = fila.popleft()
+            tarefa = fila.pop(0)
             self.registrar_sobrecarga()
             inicio_exec = tempo_atual_simulacao
             tempo_exec = min(tarefa.tempo_restante, self.quantum)
@@ -167,27 +171,47 @@ class EscalonadorRoundRobin(EscalonadorCAV):
             print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando {tarefa.nome} por {tempo_exec:.2f}s.")
             tempo_atual_simulacao += tempo_exec
             tarefa.tempos_execucao.append((inicio_exec, tempo_atual_simulacao))
-            if tarefa.tempo_restante > 0:
+            for t in self.tarefas_para_escalonar:
+                if not t in fila and inicio_exec <= t.tempo_chegada <= tempo_atual_simulacao and t != tarefa:
+                    fila.append(t)
+            if tarefa.tempo_restante > 0 and not tarefa in fila:
                 fila.append(tarefa)
             else:
                 tarefa.tempo_final = tempo_atual_simulacao
+                tarefa.foi_executada = True
                 print(f"-> Tarefa {tarefa.nome} finalizada em {tarefa.tempo_final:.2f}s.\n")
 
 class EscalonadorPrioridade(EscalonadorCAV):
+    def __init__(self, tarefas_iniciais,quantum):
+        super().__init__(tarefas_iniciais)
+        self.quantum = quantum
+
     def escalonar(self):
         self.resetar_estado_simulacao()
         print("--- Escalonamento por Prioridade ---")
-        self.tarefas_para_escalonar.sort(key=lambda tarefa: tarefa.prioridade)
         tempo_atual_simulacao = 0
-        for tarefa in self.tarefas_para_escalonar:
+        fila = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao and not tarefa.foi_executada]
+        while fila:
+            tarefa = fila.pop(0)
             self.registrar_sobrecarga()
-            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando {tarefa.nome}...")
             inicio_exec = tempo_atual_simulacao
-            tempo_atual_simulacao += tarefa.duracao
+            tempo_exec = min(tarefa.tempo_restante, self.quantum)
+            tarefa.tempo_restante -= tempo_exec
+            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando {tarefa.nome} por {tempo_exec:.2f}s.")
+            tempo_atual_simulacao += tempo_exec
             tarefa.tempos_execucao.append((inicio_exec, tempo_atual_simulacao))
-            tarefa.tempo_final = tempo_atual_simulacao
-            tarefa.tempo_restante = 0
-            print(f"Tarefa {tarefa.nome} finalizada em {tarefa.tempo_final:.2f}s.\n")
+            for t in self.tarefas_para_escalonar:
+                if not t in fila and inicio_exec <= t.tempo_chegada <= tempo_atual_simulacao and t != tarefa:
+                    fila.append(t)
+                    fila.sort(key=lambda t: t.prioridade)
+            if tarefa.tempo_restante > 0 and not tarefa in fila:
+                fila.append(tarefa)
+                fila.sort(key=lambda t: t.prioridade)
+
+            else:
+                tarefa.tempo_final = tempo_atual_simulacao
+                tarefa.foi_executada = True
+                print(f"-> Tarefa {tarefa.nome} finalizada em {tarefa.tempo_final:.2f}s.\n")
 
 class EscalonadorEDF(EscalonadorCAV):
     def __init__(self, tarefas_iniciais, quantum=1):
@@ -197,11 +221,10 @@ class EscalonadorEDF(EscalonadorCAV):
     def escalonar(self):
         self.resetar_estado_simulacao()
         print(f"--- Escalonamento EDF (Quantum: {self.quantum}s) ---")
-        tarefas_pendentes = list(self.tarefas_para_escalonar)
         tempo_atual_simulacao = 0
+        tarefas_pendentes = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao and not tarefa.foi_executada]
         while tarefas_pendentes:
-            tarefas_pendentes.sort(key=lambda tarefa: tarefa.deadline)
-            tarefa_atual = tarefas_pendentes[0]
+            tarefa_atual = tarefas_pendentes.pop(0)
             self.registrar_sobrecarga()
             inicio_exec = tempo_atual_simulacao
             tempo_exec = min(tarefa_atual.tempo_restante, self.quantum)
@@ -209,9 +232,15 @@ class EscalonadorEDF(EscalonadorCAV):
             print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando {tarefa_atual.nome} por {tempo_exec:.2f}s.")
             tempo_atual_simulacao += tempo_exec
             tarefa_atual.tempos_execucao.append((inicio_exec, tempo_atual_simulacao))
-            if tarefa_atual.tempo_restante <= 0:
+            for t in self.tarefas_para_escalonar:
+                if not t in tarefas_pendentes and inicio_exec <= t.tempo_chegada <= tempo_atual_simulacao and t != tarefa_atual:
+                    tarefas_pendentes.append(t)
+                    tarefas_pendentes.sort(key=lambda t: t.deadline - tempo_exec)
+            if tarefa_atual.tempo_restante > 0 and not tarefa_atual in tarefas_pendentes:
+                tarefas_pendentes.append(tarefa_atual)
+                tarefas_pendentes.sort(key=lambda t: t.deadline - tempo_exec)
+            else:
                 tarefa_atual.tempo_final = tempo_atual_simulacao
-                tarefas_pendentes.remove(tarefa_atual)
                 print(f"   -> Tarefa {tarefa_atual.nome} finalizada em {tarefa_atual.tempo_final:.2f}s.")
                 if tarefa_atual.tempo_final - tarefa_atual.tempo_chegada > tarefa_atual.deadline:
                     print(f"   -> DEADLINE PERDIDO!\n")

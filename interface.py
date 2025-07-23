@@ -150,8 +150,8 @@ class App:
             escalonador = EscalonadorRoundRobin(tarefas_iniciais=self.tarefas_base, quantum=2)
             titulo = "Round Robin (Q=2)"
         elif tipo_escalonador == "PRIO":
-            escalonador = EscalonadorPrioridade(self.tarefas_base)
-            titulo = "Prioridade"
+            escalonador = EscalonadorPrioridade(tarefas_iniciais=self.tarefas_base,quantum=2)
+            titulo = "Prioridade (Q=2)"
         elif tipo_escalonador == "EDF":
             escalonador = EscalonadorEDF(tarefas_iniciais=self.tarefas_base, quantum=2)
             titulo = "Earliest Deadline First (EDF)"

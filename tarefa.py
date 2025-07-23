@@ -15,6 +15,9 @@ class TarefaCAV:
     def __str__(self):
         return f"Tarefa {self.nome} (Prioridade {self.prioridade}): {self.duracao} segundos"
 
+    def __repr__(self):
+        return f"{self.nome}"
+
     def executar(self, quantum):
         """Executa a tarefa por um tempo de 'quantum' ou até terminar."""
         tempo_exec = min(self.tempo_restante, quantum)

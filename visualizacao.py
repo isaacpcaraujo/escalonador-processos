@@ -32,7 +32,7 @@ def visualizar_gantt(parent_window, escalonador: EscalonadorCAV, titulo: str):
     altura_grafico = max(6, len(escalonador.tarefas_para_escalonar) * 0.7)
     fig, ax = plt.subplots(figsize=(10, altura_grafico))
 
-    nomes_tarefas = sorted(list(set(t.nome for t in escalonador.tarefas_para_escalonar)), reverse=True)
+    nomes_tarefas = [tarefa.nome for tarefa in escalonador.tarefas_para_escalonar]
     colors = cm.viridis(np.linspace(0, 1, len(nomes_tarefas)))
     color_map = {nome: color for nome, color in zip(nomes_tarefas, colors)}
 

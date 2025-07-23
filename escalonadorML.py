@@ -154,10 +154,10 @@ def treinar_modelo_decision_tree():
     acc = modelo.score(X, y)
     print(f"\nAcurácia no dataset gerado: {acc:.2f}")
 
-    plt.figure(figsize=(15, 6))
-    tree.plot_tree(modelo, feature_names=X.columns, class_names=["Não escolhida", "Escolhida"], filled=True)
-    plt.title("Árvore de Decisão do Escalonador ML")
-    plt.show()
+    # plt.figure(figsize=(15, 6))
+    # tree.plot_tree(modelo, feature_names=X.columns, class_names=["Não escolhida", "Escolhida"], filled=True)
+    # plt.title("Árvore de Decisão do Escalonador ML")
+    # plt.show()
 
     return modelo
 

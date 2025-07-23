@@ -74,11 +74,11 @@ class App:
             ("FIFO", "FIFO"),
             ("SJF", "SJF"),
             ("Round Robin (Q=2)", "RR"),
-            ("Prioridade", "PRIO"),
+            ("Prioridade (Q=2)", "PRIO"),
             ("EDF (Q=2)", "EDF"),
-            ("SRTF", "SRTF"),
+            ("SRTF (Q=2)", "SRTF"),
             ("Round Robin Dinâmico", "RR_Dinamico"),
-            ("Escalonador ML", "ML") # NOVO
+            ("Escalonador ML (Q=2)", "ML") # NOVO
         ]
 
         for texto, tipo in botoes_info:
@@ -148,10 +148,10 @@ class App:
             titulo = "Shortest Job First (SJF)"
         elif tipo_escalonador == "RR":
             escalonador = EscalonadorRoundRobin(tarefas_iniciais=self.tarefas_base, quantum=2)
-            titulo = "Round Robin (Q=2)"
+            titulo = "Round Robin"
         elif tipo_escalonador == "PRIO":
             escalonador = EscalonadorPrioridade(tarefas_iniciais=self.tarefas_base,quantum=2)
-            titulo = "Prioridade (Q=2)"
+            titulo = "Prioridade"
         elif tipo_escalonador == "EDF":
             escalonador = EscalonadorEDF(tarefas_iniciais=self.tarefas_base, quantum=2)
             titulo = "Earliest Deadline First (EDF)"

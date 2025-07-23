@@ -88,7 +88,7 @@ def gerar_dataset_supervisionado(n_amostras=1000, n_tarefas_por_amostra=5):
 
     estrategias = [
         ("SJF", lambda tarefas: min(tarefas, key=lambda t: t.duracao)),
-        ("Prioridade", lambda tarefas: max(tarefas, key=lambda t: t.prioridade)),
+        ("Prioridade", lambda tarefas: min(tarefas, key=lambda t: t.prioridade)),
         ("EDF", lambda tarefas: min(tarefas, key=lambda t: t.deadline)),
     ]
 

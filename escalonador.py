@@ -115,7 +115,7 @@ class EscalonadorCAV(ABC):
             writer.writerow(["Sobrecarga Total (s)", f"{self.sobrecarga_total:.2f}"])
             writer.writerow(["Total de Deadlines Perdidos", self.deadlines_perdidos])
 
-        print(f"\n✅ Métricas salvas em: {caminho_completo}")
+        print(f"\n Métricas salvas em: {caminho_completo}")
 
 # --- IMPLEMENTAÇÕES DOS ESCALONADORES ---
 
@@ -218,3 +218,104 @@ class EscalonadorEDF(EscalonadorCAV):
                     self.deadlines_perdidos += 1  # Contador incrementado
                 else:
                     print(f"   -> Deadline cumprido.\n")
+
+class EscalonadorSRTF(EscalonadorCAV):
+    """
+    Escalonador Shortest Remaining Time First (SRTF) - Preemptivo.
+    A cada instante, seleciona a tarefa com o menor tempo restante para executar.
+    """
+    def escalonar(self):
+        self.resetar_estado_simulacao()
+        print("--- Escalonamento SRTF (Shortest Remaining Time First) ---")
+
+        tempo_atual_simulacao = 0
+        tarefas_concluidas = 0
+        total_tarefas = len(self.tarefas_para_escalonar)
+        tarefa_em_execucao = None
+
+        while tarefas_concluidas < total_tarefas:
+            # Filtra tarefas que já chegaram e ainda não foram concluídas
+            fila_prontos = [t for t in self.tarefas_para_escalonar if t.tempo_chegada <= tempo_atual_simulacao and t.tempo_restante > 0]
+
+            if not fila_prontos:
+                # Se não há tarefas prontas, avança o tempo para a próxima chegada
+                tempo_atual_simulacao += 1
+                continue
+
+            # Ordena a fila de prontos pelo menor tempo restante
+            fila_prontos.sort(key=lambda t: t.tempo_restante)
+            proxima_tarefa = fila_prontos[0]
+
+            # Lógica de preempção e troca de contexto
+            if tarefa_em_execucao != proxima_tarefa:
+                self.registrar_sobrecarga()
+                tarefa_em_execucao = proxima_tarefa
+                print(f"Tempo: {tempo_atual_simulacao:.2f}s - Assumindo tarefa {tarefa_em_execucao.nome} (Restante: {tarefa_em_execucao.tempo_restante:.2f}s)")
+
+            # Executa a tarefa por uma unidade de tempo
+            inicio_burst = tempo_atual_simulacao
+            tarefa_em_execucao.tempo_restante -= 1
+            tempo_atual_simulacao += 1
+            
+            # Registra o burst de execução (mesmo que seja de 1s)
+            # Para o Gantt, podemos otimizar depois, mas vamos registrar tudo por enquanto
+            if not tarefa_em_execucao.tempos_execucao or tarefa_em_execucao.tempos_execucao[-1][1] != inicio_burst:
+                tarefa_em_execucao.tempos_execucao.append([inicio_burst, tempo_atual_simulacao])
+            else: # Estende o burst anterior
+                tarefa_em_execucao.tempos_execucao[-1][1] = tempo_atual_simulacao
+
+
+            # Verifica se a tarefa terminou
+            if tarefa_em_execucao.tempo_restante <= 0:
+                tarefa_em_execucao.tempo_final = tempo_atual_simulacao
+                tarefas_concluidas += 1
+                tarefa_em_execucao = None # Limpa a tarefa em execução
+                print(f"-> Tarefa {proxima_tarefa.nome} finalizada em {proxima_tarefa.tempo_final:.2f}s.\n")
+                if proxima_tarefa.tempo_final - proxima_tarefa.tempo_chegada > proxima_tarefa.deadline:
+                    self.deadlines_perdidos += 1
+
+class EscalonadorRoundRobinDinamico(EscalonadorCAV):
+    """
+    Escalonador Round Robin com Quantum Dinâmico baseado na prioridade.
+    Tarefas de maior prioridade (menor número) recebem um quantum maior.
+    """
+    def __init__(self, quantum_base, tarefas_iniciais):
+        super().__init__(tarefas_iniciais)
+        self.quantum_base = quantum_base
+
+    def escalonar(self):
+        self.resetar_estado_simulacao()
+        print(f"--- Escalonamento Round Robin com Quantum Dinâmico (Base: {self.quantum_base}s) ---")
+        
+        if not self.tarefas_para_escalonar:
+            return
+
+        # Encontra a prioridade máxima (menor número) para o cálculo
+        prioridade_max = max(t.prioridade for t in self.tarefas_para_escalonar)
+        
+        fila = deque(self.tarefas_para_escalonar)
+        tempo_atual_simulacao = 0
+        
+        while fila:
+            tarefa = fila.popleft()
+            self.registrar_sobrecarga()
+
+            # Calcula o quantum dinâmico para esta tarefa
+            quantum_dinamico = self.quantum_base + (prioridade_max - tarefa.prioridade)
+            
+            inicio_exec = tempo_atual_simulacao
+            tempo_exec = min(tarefa.tempo_restante, quantum_dinamico)
+            tarefa.tempo_restante -= tempo_exec
+            
+            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando {tarefa.nome} (P:{tarefa.prioridade}) com quantum dinâmico de {quantum_dinamico:.2f}s por {tempo_exec:.2f}s.")
+            
+            tempo_atual_simulacao += tempo_exec
+            tarefa.tempos_execucao.append((inicio_exec, tempo_atual_simulacao))
+            
+            if tarefa.tempo_restante > 0:
+                fila.append(tarefa)
+            else:
+                tarefa.tempo_final = tempo_atual_simulacao
+                print(f"-> Tarefa {tarefa.nome} finalizada em {tarefa.tempo_final:.2f}s.\n")
+                if tarefa.tempo_final - tarefa.tempo_chegada > tarefa.deadline:
+                    self.deadlines_perdidos += 1

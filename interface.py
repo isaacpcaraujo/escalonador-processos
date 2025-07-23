@@ -89,8 +89,9 @@ class App:
     def atualizar_listbox(self):
         """Limpa e preenche a Listbox com as tarefas atuais."""
         self.listbox_tarefas.delete(0, tk.END)
+        self.listbox_tarefas.config(font=("Courier", 10))
         for tarefa in self.tarefas_base:
-            texto_tarefa = f"{tarefa.nome} (D: {tarefa.duracao}, P: {tarefa.prioridade}, DL: {tarefa.deadline})"
+            texto_tarefa = f"{tarefa.nome} (Tc: {tarefa.tempo_chegada}, D: {tarefa.duracao}, P: {tarefa.prioridade}, DL: {tarefa.deadline})"
             self.listbox_tarefas.insert(tk.END, texto_tarefa)
 
     def remover_tarefa_selecionada(self):

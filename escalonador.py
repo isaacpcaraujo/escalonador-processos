@@ -164,7 +164,6 @@ class EscalonadorRoundRobin(EscalonadorCAV):
         fila = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao and not tarefa.foi_executada]
         while fila:
             tarefa = fila.pop(0)
-            self.registrar_sobrecarga()
             inicio_exec = tempo_atual_simulacao
             tempo_exec = min(tarefa.tempo_restante, self.quantum)
             tarefa.tempo_restante -= tempo_exec
@@ -176,6 +175,7 @@ class EscalonadorRoundRobin(EscalonadorCAV):
                     fila.append(t)
             if tarefa.tempo_restante > 0 and not tarefa in fila:
                 fila.append(tarefa)
+                self.registrar_sobrecarga()
             else:
                 tarefa.tempo_final = tempo_atual_simulacao
                 tarefa.foi_executada = True
@@ -193,7 +193,6 @@ class EscalonadorPrioridade(EscalonadorCAV):
         fila = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao and not tarefa.foi_executada]
         while fila:
             tarefa = fila.pop(0)
-            self.registrar_sobrecarga()
             inicio_exec = tempo_atual_simulacao
             tempo_exec = min(tarefa.tempo_restante, self.quantum)
             tarefa.tempo_restante -= tempo_exec
@@ -207,6 +206,7 @@ class EscalonadorPrioridade(EscalonadorCAV):
             if tarefa.tempo_restante > 0 and not tarefa in fila:
                 fila.append(tarefa)
                 fila.sort(key=lambda t: t.prioridade)
+                self.registrar_sobrecarga()
 
             else:
                 tarefa.tempo_final = tempo_atual_simulacao
@@ -225,7 +225,6 @@ class EscalonadorEDF(EscalonadorCAV):
         tarefas_pendentes = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao and not tarefa.foi_executada]
         while tarefas_pendentes:
             tarefa_atual = tarefas_pendentes.pop(0)
-            self.registrar_sobrecarga()
             inicio_exec = tempo_atual_simulacao
             tempo_exec = min(tarefa_atual.tempo_restante, self.quantum)
             tarefa_atual.tempo_restante -= tempo_exec
@@ -239,6 +238,7 @@ class EscalonadorEDF(EscalonadorCAV):
             if tarefa_atual.tempo_restante > 0 and not tarefa_atual in tarefas_pendentes:
                 tarefas_pendentes.append(tarefa_atual)
                 tarefas_pendentes.sort(key=lambda t: t.deadline - tempo_exec)
+                self.registrar_sobrecarga()
             else:
                 tarefa_atual.tempo_final = tempo_atual_simulacao
                 print(f"   -> Tarefa {tarefa_atual.nome} finalizada em {tarefa_atual.tempo_final:.2f}s.")

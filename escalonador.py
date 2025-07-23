@@ -322,29 +322,24 @@ class EscalonadorRoundRobinDinamico(EscalonadorCAV):
         # Encontra a prioridade máxima (menor número) para o cálculo
         prioridade_max = max(t.prioridade for t in self.tarefas_para_escalonar)
         
-        fila = deque(self.tarefas_para_escalonar)
         tempo_atual_simulacao = 0
-        
+        fila = [tarefa for tarefa in self.tarefas_para_escalonar if tarefa.tempo_chegada <= tempo_atual_simulacao and not tarefa.foi_executada]
         while fila:
-            tarefa = fila.popleft()
-            self.registrar_sobrecarga()
-
-            # Calcula o quantum dinâmico para esta tarefa
+            tarefa = fila.pop(0)
             quantum_dinamico = self.quantum_base + (prioridade_max - tarefa.prioridade)
-            
             inicio_exec = tempo_atual_simulacao
             tempo_exec = min(tarefa.tempo_restante, quantum_dinamico)
             tarefa.tempo_restante -= tempo_exec
-            
-            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando {tarefa.nome} (P:{tarefa.prioridade}) com quantum dinâmico de {quantum_dinamico:.2f}s por {tempo_exec:.2f}s.")
-            
+            print(f"Tempo: {tempo_atual_simulacao:.2f}s - Executando {tarefa.nome} por {tempo_exec:.2f}s.")
             tempo_atual_simulacao += tempo_exec
             tarefa.tempos_execucao.append((inicio_exec, tempo_atual_simulacao))
-            
-            if tarefa.tempo_restante > 0:
+            for t in self.tarefas_para_escalonar:
+                if not t in fila and inicio_exec <= t.tempo_chegada <= tempo_atual_simulacao and t != tarefa:
+                    fila.append(t)
+            if tarefa.tempo_restante > 0 and not tarefa in fila:
                 fila.append(tarefa)
+                self.registrar_sobrecarga()
             else:
                 tarefa.tempo_final = tempo_atual_simulacao
+                tarefa.foi_executada = True
                 print(f"-> Tarefa {tarefa.nome} finalizada em {tarefa.tempo_final:.2f}s.\n")
-                if tarefa.tempo_final - tarefa.tempo_chegada > tarefa.deadline:
-                    self.deadlines_perdidos += 1
